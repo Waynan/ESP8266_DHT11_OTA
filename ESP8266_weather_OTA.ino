@@ -7,14 +7,16 @@
  
 // replace with your channel’s thingspeak API key and your SSID and password
 String apiKey = "W7E8CCMTPYYSG5MC";
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "Androidw";
+const char* password = "87654321";
 const char* server = "api.thingspeak.com";
 
 unsigned int tilts;
 unsigned int rst;
 float rainfall;
 float convert;
+unsigned long previousMillis = 0;
+const long interval = 30000;
  
 #define DHTPIN 5
 #define DHTTYPE DHT11 
@@ -87,22 +89,23 @@ Serial.println("WiFi connected");
  
 void loop() 
 {
-ArduinoOTA.handle();
+//ArduinoOTA.handle();
 //rainfall
-if(rst==52)//reset rainfall every hour
+if(rst==120)//reset rainfall every hour
   {
     tilts=0;
     rst=0;
     rainfall=0;
   }
-  
-  rst++;
+    rst++;
+ 
   //humidity and temp
 float h = dht.readHumidity();
 float t = dht.readTemperature();
 if (isnan(h) || isnan(t)) 
 {
-Serial.println("Failed to read from DHT sensor!");
+Serial.println("Reading from DHT sensor!");
+delay(100);
 return;
 }
  
@@ -125,32 +128,34 @@ client.print("Content-Length: ");
 client.print(postStr.length());
 client.print("\n\n");
 client.print(postStr);
- 
+
+Serial.print("Rainfall: ");
+Serial.print(rainfall); 
 Serial.print("Temperature: ");
 Serial.print(t);
 Serial.print(" degrees Celsius Humidity: ");
 Serial.print(h);
+Serial.println("");
 Serial.println("Sending data to Thingspeak");
 }
+delay(100);
 client.stop();
-ArduinoOTA.handle(); 
 Serial.println("Waiting 30 secs");
 // thingspeak needs at least a 15 sec delay between updates
-// 20 seconds to be safe
-delay(30000);
+// 30 seconds to be safe
+unsigned long currentMillis = millis();
+  if(currentMillis - previousMillis >= interval) 
+  {
+    previousMillis = currentMillis;   
+    ArduinoOTA.handle();
+  }
 }
 
-void magnet_detect()//This function is called whenever a magnet/interrupt is detected by the arduino
+//This function is called whenever a magnet/interrupt is detected by the arduino
+void magnet_detect()
  {
+   detachInterrupt(4);
    tilts++;
-   ///dbgSerial.println("Total bucket tilts @ 1.82mm per tilt or 0.535mm per sqm");
-  // dbgSerial.println(tilts);
    rainfall=tilts*convert;
-  // dbgSerial.println("Total rainfallfor the day");
-  // dbgSerial.print(rainfall);
-   //dbgSerial.println("mm");
-  // dbgSerial.println("Total volume through");
-  // dbgSerial.print(tilts*1.82);
-  // dbgSerial.println("ml");
- }
-
+   attachInterrupt(4, magnet_detect, RISING);
+}
