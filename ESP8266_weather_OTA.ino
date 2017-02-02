@@ -7,8 +7,8 @@
  
 // replace with your channel’s thingspeak API key and your SSID and password
 String apiKey = "W7E8CCMTPYYSG5MC";
-const char* ssid = "Taylor_home";
-const char* password = "58FF675BEFD682A329B4";
+const char* ssid = "";
+const char* password = "";
 const char* server = "api.thingspeak.com";
 
 unsigned int tilts;
