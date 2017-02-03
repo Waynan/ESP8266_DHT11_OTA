@@ -4,6 +4,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <time.h>
  
 // replace with your channel’s thingspeak API key and your SSID and password
 String apiKey = "W7E8CCMTPYYSG5MC";
@@ -83,36 +84,53 @@ Serial.println("WiFi connected");
    tilts = 0;
    rainfall = 0;
    convert = 0.535;
-   rst = 52;
+   //rst = 52;
+   configTime(2 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+   delay(2000);
  
 }
  
 void loop() 
 {
-//ArduinoOTA.handle();
+  
+  //humidity and temp
+float h = dht.readHumidity();
+float tp = dht.readTemperature();
+Serial.println("Reading DHT sensor!");
+if (isnan(h) || isnan(tp)) 
+{
+Serial.println("Rtrying DHT sensor!");
+delay(1000);
+return;
+}
+
 //rainfall
-if(rst==120)//reset rainfall every hour
-  {
+
+    time_t t = time(NULL);
+    Serial.println(ctime(&t));
+    String hour = ctime(&t);
+    hour.remove(0,11);
+    hour.remove(2);
+    Serial.println(hour);
+    String mnte = ctime(&t);
+    mnte.remove(0,14);
+    mnte.remove(2);
+    Serial.println(mnte);
+    
+    if(hour == "00" && mnte == "00")
+    {
     tilts=0;
     rst=0;
     rainfall=0;
-  }
-    rst++;
- 
-  //humidity and temp
-float h = dht.readHumidity();
-float t = dht.readTemperature();
-if (isnan(h) || isnan(t)) 
-{
-Serial.println("Reading from DHT sensor!");
-delay(100);
-return;
-}
- 
+    Serial.println("rainfall reset");
+    }
+client.connect(server,80);
+delay(1000);
+    
 if (client.connect(server,80)) {
 String postStr = apiKey;
 postStr +="&field1=";
-postStr += String(t);
+postStr += String(tp);
 postStr +="&field2=";
 postStr += String(h);
 postStr +="&field3=";
@@ -132,27 +150,28 @@ client.print(postStr);
 Serial.print("Rainfall: ");
 Serial.print(rainfall); 
 Serial.print("Temperature: ");
-Serial.print(t);
+Serial.print(tp);
 Serial.print(" degrees Celsius Humidity: ");
 Serial.print(h);
 Serial.println("");
 Serial.println("Sending data to Thingspeak");
 }
-delay(100);
+delay(1000);
 client.stop();
 Serial.println("Waiting 30 secs");
 // thingspeak needs at least a 15 sec delay between updates
-// 30 seconds to be safe
+// 20 seconds to be safe
+
 unsigned long currentMillis = millis();
   if(currentMillis - previousMillis >= interval) 
   {
     previousMillis = currentMillis;   
     ArduinoOTA.handle();
   }
+  Serial.println("Delay Complete");
 }
 
-//This function is called whenever a magnet/interrupt is detected by the arduino
-void magnet_detect()
+void magnet_detect()//This function is called whenever a magnet/interrupt is detected by the arduino
  {
    detachInterrupt(4);
    tilts++;
