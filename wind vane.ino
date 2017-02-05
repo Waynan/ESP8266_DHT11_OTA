@@ -81,23 +81,23 @@ void loop()
 {
 ArduinoOTA.handle();
 compass = 0;
-if(digitalRead(14))
+if(digitalRead(14)== LOW)
 {
 bitSet(compass, 0);
 }
-if(digitalRead(12)) //pin D6
+if(digitalRead(12)== LOW) //pin D6
 {
 bitSet(compass, 1);
 }
-if(digitalRead(13)) //pin D7
+if(digitalRead(13)== LOW) //pin D7
 {
 bitSet(compass, 2);
 }
-if(digitalRead(0))
+if(digitalRead(0)== LOW)
 {
 bitSet(compass, 3);
 }
-if(digitalRead(2))
+if(digitalRead(2)== LOW)
 {
 bitSet(compass, 4);
 }
